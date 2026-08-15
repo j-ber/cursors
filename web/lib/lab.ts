@@ -11,6 +11,7 @@ import {
   loadCultureFixture,
   loadEvidenceFixture,
 } from "./correlator";
+import { GROK_MODEL, grokText } from "./grok";
 import type { Market } from "../../shared/types/contract";
 import type { LabResult, LabStep } from "./lab-types";
 
@@ -78,27 +79,12 @@ function parseJsonField<T>(raw: unknown, fallback: T): T {
 }
 
 async function pingGrok(key: string) {
-  const res = await fetch("https://api.x.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "grok-4-fast",
-      max_tokens: 40,
-      messages: [
-        {
-          role: "user",
-          content:
-            "Return only JSON: {\"ok\":true,\"note\":\"xAI reachable\"}",
-        },
-      ],
-    }),
+  const text = await grokText({
+    apiKey: key,
+    model: GROK_MODEL,
+    prompt: 'Reply with exactly: {"ok":true,"note":"xAI reachable"}',
   });
-  const body = await res.text();
-  if (!res.ok) throw new Error(`${res.status} ${body.slice(0, 240)}`);
-  return JSON.parse(body) as { choices?: { message?: { content?: string } }[] };
+  return { text };
 }
 
 export async function runLab(mode: "live" | "replay"): Promise<LabResult> {
@@ -240,7 +226,7 @@ export async function runLab(mode: "live" | "replay"): Promise<LabResult> {
 
   if (grokKey) {
     const grok = await timed(() => pingGrok(grokKey));
-    const content = grok.value?.choices?.[0]?.message?.content ?? "";
+    const content = grok.value?.text ?? "";
     steps.push(
       grok.value
         ? {

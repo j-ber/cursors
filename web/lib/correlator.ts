@@ -8,11 +8,13 @@ import type {
   Recommendation,
 } from "../../shared/types/contract";
 import { RECOMMENDATION_KEYS } from "../../shared/types/contract";
+import {
+  GROK_MODEL,
+  GROK_MODEL_FALLBACK,
+  grokObject,
+  recommendationSchema,
+} from "./grok";
 import { REPLAY_CUTOFF, REPLAY_SLUG, getMarket } from "./market";
-
-const XAI_URL = "https://api.x.ai/v1/chat/completions";
-const MODEL = "grok-4.6";
-const MODEL_FALLBACK = "grok-4-fast";
 
 function fixturesDir() {
   const cwd = process.cwd();
@@ -119,25 +121,6 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-function stripFences(text: string): string {
-  const trimmed = text.trim();
-  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)```$/i);
-  return (fenced?.[1] ?? trimmed).trim();
-}
-
-function parseJsonObject(text: string): Record<string, unknown> | null {
-  const cleaned = stripFences(text);
-  const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-  if (start === -1 || end <= start) return null;
-  try {
-    const parsed: unknown = JSON.parse(cleaned.slice(start, end + 1));
-    return isRecord(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
 function clamp(n: unknown, lo: number, hi: number): number {
   const v = Number(n);
   if (!Number.isFinite(v)) return lo;
@@ -202,37 +185,6 @@ function redactCulture(culture: Culture, asOf?: string): Culture {
   };
 }
 
-const RECOMMENDATION_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "market_id",
-    "as_of",
-    "verdict",
-    "suggested_side",
-    "divergence_score",
-    "confidence",
-    "explanation",
-    "supporting_reasons",
-    "counterargument",
-    "sources",
-    "flagged",
-  ],
-  properties: {
-    market_id: { type: "string" },
-    as_of: { type: "string" },
-    verdict: { type: "string", enum: ["aligned", "diverged"] },
-    suggested_side: { type: "string", enum: ["YES", "NO", "WATCH"] },
-    divergence_score: { type: "number", minimum: 0, maximum: 100 },
-    confidence: { type: "number", minimum: 0, maximum: 100 },
-    explanation: { type: "string" },
-    supporting_reasons: { type: "array", items: { type: "string" } },
-    counterargument: { type: "string" },
-    sources: { type: "array", items: { type: "string" } },
-    flagged: { type: "boolean" },
-  },
-} as const;
-
 function systemPrompt(asOf?: string): string {
   const asOfRule = asOf
     ? `You are living at ${asOf}. You MUST reason only from the supplied payloads. Forbidden: any knowledge, news, rankings, or prices after that timestamp. If culture.official_rank is empty, the official outcome is not yet known — do not guess it from memory.`
@@ -284,46 +236,17 @@ async function callGrok(
     culture,
   });
 
-  const res = await fetch(XAI_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0,
-      messages: [
-        { role: "system", content: systemPrompt(asOf) },
-        {
-          role: "user",
-          content: `Compare these three inputs and return the Recommendation JSON.\n${user}`,
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "recommendation",
-          schema: RECOMMENDATION_SCHEMA,
-          strict: true,
-        },
-      },
-    }),
-    cache: "no-store",
+  const draft = await grokObject({
+    apiKey,
+    model,
+    system: systemPrompt(asOf),
+    prompt: `Compare these three inputs and return the Recommendation JSON.\n${user}`,
+    schema: recommendationSchema,
+    name: "recommendation",
   });
 
-  const bodyText = await res.text();
-  if (!res.ok) {
-    throw new Error(`${model} ${res.status} ${bodyText.slice(0, 280)}`);
-  }
-  const body = JSON.parse(bodyText) as {
-    choices?: { message?: { content?: string } }[];
-  };
-  const content = body.choices?.[0]?.message?.content ?? "";
-  const parsed = parseJsonObject(content);
-  if (!parsed) throw new Error(`${model} did not return JSON`);
   return toRecommendation(
-    parsed,
+    { ...draft },
     { market_id: market.id, as_of: asOf ?? market.timestamp },
     "grok",
   );
@@ -352,12 +275,12 @@ export async function correlate(
 
   const apiKey = process.env.XAI_API_KEY!.trim();
   try {
-    return await callGrok(apiKey, MODEL, market, evidence, safeCulture, asOf);
+    return await callGrok(apiKey, GROK_MODEL, market, evidence, safeCulture, asOf);
   } catch {
     try {
       return await callGrok(
         apiKey,
-        MODEL_FALLBACK,
+        GROK_MODEL_FALLBACK,
         market,
         evidence,
         safeCulture,
