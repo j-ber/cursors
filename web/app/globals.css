@@ -32,12 +32,18 @@
   --color-ground: var(--ground);
   --color-card: var(--card);
   --color-inset: var(--inset);
+  --color-rail: var(--rail);
   --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
   --color-hairline: var(--hairline);
+  --color-hairline-2: var(--hairline-2);
   --color-market: var(--market);
+  --color-evidence: var(--evidence);
   --color-flag: var(--flag);
+  --color-flag-bg: var(--flag-bg);
   --color-calm: var(--calm);
+  --color-calm-bg: var(--calm-bg);
   --font-sans: var(--sans);
   --font-mono: var(--mono);
 }

@@ -27,6 +27,10 @@ It exists so four people building in parallel with coding agents produce **one i
 5. **Replay only appears on resolved markets.** On unresolved ones show the locked state — that's honest, and it's already built.
 6. **Both themes or neither.** Every color comes from a token. Never hardcode a hex in a component.
 
-## Note on the P4 scaffold prompt
+## Status: the scaffold already adopted this
 
-The scaffold ticket says "dark theme, one accent color, big typography." This mock is light-first with a dark mode and two series colors, because the product's core graphic is two lines that must stay distinguishable. **Use the mock.** If the scaffold already shipped dark-only, keep it — the tokens support both, so it's a variable swap, not a rewrite.
+`web/app/globals.css` carries this token set, wired into Tailwind v4 via `@theme inline`. Use the utilities — `bg-card`, `text-muted`, `border-hairline`, `text-market`, `text-evidence`, `bg-flag-bg` — instead of hardcoding hex values in components.
+
+The app committed to **dark-only** on `--ground: #17161a`. That's a real decision, not an oversight, and the series colors in the scaffold are the pair validated against that exact surface. So: no light mode, and don't add one halfway. If a component needs a color that isn't a token, that's a signal the design is drifting — raise it rather than inventing a hex.
+
+Rule 6 above ("both themes or neither") resolves to **neither** for this build. Every color still comes from a token.
