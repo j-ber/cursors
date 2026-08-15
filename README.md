@@ -34,16 +34,10 @@ Full architecture, data contracts, and cadences: see [`CONTEXT.md`](./CONTEXT.md
 
 ```bash
 git clone <repo-url>
-cd drift
-cp .env.example .env   # fill in API keys — see CONTEXT.md for which ones are required vs optional
+cd cursors
+cp .env.example .env
 
-# backend
-cd backend
-pip install -r requirements.txt
-python orchestrator.py
-
-# frontend
-cd ../frontend
+cd web
 npm install
 npm run dev
 ```
