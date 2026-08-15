@@ -7,9 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check:market": "npx tsx lib/__checks__/market.check.ts"
+    "check:market": "npx tsx lib/__checks__/market.check.ts",
+    "check:evidence": "npx tsx lib/__checks__/evidence.check.ts",
+    "check:truth": "npx tsx lib/__checks__/truth.check.ts",
+    "check": "npm run check:market && npm run check:evidence && npm run check:truth && npx tsx lib/__checks__/correlator.check.ts"
   },
   "dependencies": {
+    "@cursor/sdk": "^1.0.28",
     "next": "16.3.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"

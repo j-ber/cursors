@@ -75,7 +75,8 @@ function outcomesFromEvent(event: GammaEvent) {
 
 function filterHistory(history: PricePoint[], asOf?: string) {
   if (!asOf) return history;
-  const cutoff = Date.parse(asOf);
+  // 60s slack so CLOB points a few seconds after the nominal cutoff still count.
+  const cutoff = Date.parse(asOf) + 60_000;
   return history.filter((pt) => Date.parse(pt.t) <= cutoff);
 }
 
@@ -172,13 +173,18 @@ export async function getMarket(slug: string, asOf?: string): Promise<Market> {
       history = filterHistory(clobHistoryToPoints(histRaw), asOf);
     }
 
+    // When asOf is set, surface the cutoff price — not post-resolution odds.
+    if (asOf && history.length > 0) {
+      odds_by_outcome[leading.title] = history[history.length - 1].p;
+    }
+
     return {
       id: event.slug || slug,
       title: event.title || slug,
       odds_by_outcome,
       history,
       volume_24h: Number(event.volume24hr ?? event.volume ?? 0),
-      timestamp: new Date().toISOString(),
+      timestamp: asOf ?? new Date().toISOString(),
       source: "polymarket",
     };
   } catch {
