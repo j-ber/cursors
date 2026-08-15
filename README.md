@@ -1,3 +1,5 @@
+> **Moved for submission.** Use the clean-history repo: **https://github.com/Manoj1634/drift** (Contributors: human only). This `j-ber/cursors` tree still has historical Claude/Cursor co-author trailers — do **not** put this URL on the hackathon form. Ask `j-ber` to make this repository private.
+
 # Drift
 
 **Prediction markets tell you what people will bet. The internet tells you what people are starting to believe. Drift flags the moment those two separate.**
