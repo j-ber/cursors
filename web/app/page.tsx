@@ -18,7 +18,12 @@ export default async function Feed() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 bg-black p-6 text-white">
-      <h1 className="text-xl font-semibold">Signal Feed</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Signal Feed</h1>
+        <a href="/lab" className="text-sm text-[#2e6cff]">
+          Test APIs →
+        </a>
+      </div>
       <p className="text-sm text-[#8b8b8b]">
         P1 Market Pulse · source {live.source}/{replay.source}
       </p>
