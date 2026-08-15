@@ -6,6 +6,11 @@ import {
   REPLAY_SLUG,
   getMarket,
 } from "./market";
+import {
+  correlate,
+  loadCultureFixture,
+  loadEvidenceFixture,
+} from "./correlator";
 import type { Market } from "../../shared/types/contract";
 import type { LabResult, LabStep } from "./lab-types";
 
@@ -289,16 +294,34 @@ export async function runLab(mode: "live" | "replay"): Promise<LabResult> {
     payload: truth,
   });
 
-  const rec = readFixture("recommendation.json");
-  steps.push({
-    id: "correlator",
-    label: "Correlator · recommendation",
-    ok: rec.verdict === "diverged" || rec.verdict === "aligned",
-    ms: 1,
-    source: rec.explanation?.includes("PLACEHOLDER") ? "fixture" : "live",
-    summary: `${rec.verdict} · score ${rec.divergence_score} · ${rec.explanation}`,
-    payload: rec,
+  const recRun = await timed(async () => {
+    const m = market ?? (await getMarket(slug, asOf));
+    return correlate(m, loadEvidenceFixture(), loadCultureFixture(), asOf);
   });
+  if (recRun.value) {
+    const rec = recRun.value;
+    steps.push({
+      id: "correlator",
+      label: "Correlator · Grok 4.6",
+      ok:
+        (rec.verdict === "diverged" || rec.verdict === "aligned") &&
+        !rec.counterargument.includes("PLACEHOLDER"),
+      ms: recRun.ms,
+      source: rec.source === "grok" ? "live" : "fixture",
+      summary: `${rec.verdict} · score ${rec.divergence_score} · ${rec.suggested_side} · ${rec.explanation.slice(0, 160)}`,
+      payload: rec,
+    });
+  } else {
+    steps.push({
+      id: "correlator",
+      label: "Correlator · Grok 4.6",
+      ok: false,
+      ms: recRun.ms,
+      source: "fixture",
+      summary: "correlate() threw",
+      error: recRun.error,
+    });
+  }
 
   return { mode, slug, asOf, grokKeyPresent: Boolean(grokKey), steps, market };
 }

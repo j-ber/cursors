@@ -5,11 +5,16 @@
   "suggested_side": "YES",
   "divergence_score": 78,
   "confidence": 73,
-  "explanation": "PLACEHOLDER - real output comes from Grok Correlator",
+  "explanation": "At the Aug 6 12:00 UTC cutoff the market still priced The Idaho Murders: College Nightmare around 48%, while the supplied social score (86) and web score (74) were both elevated and trending up. That is a large evidence gap: public conversation was already treating the title as the week's breakout, and the market had not yet repriced it as the likely #1.",
   "supporting_reasons": [
-    "PLACEHOLDER"
+    "Leading outcome in the payload is Idaho Murders at ~48% — far below a consensus #1 price.",
+    "Social 86 / web 74 with trend=rising inside the pre-cutoff window.",
+    "No official ranking is knowable at this asOf, so the gap is market vs public evidence, not vs the later reveal."
   ],
-  "counterargument": "PLACEHOLDER",
-  "sources": [],
+  "counterargument": "True-crime premieres often spike social volume without converting into the weekly hours Netflix uses for Top 10. The 48% price may already be a reasoned middle ground if traders discount chatter, and a single-show evidence packet cannot rule out another title quietly accumulating views. Suggested side YES is an evidence-gap call, not a settled outcome.",
+  "sources": [
+    "polymarket replay cutoff 2026-08-06T12:00:00Z",
+    "evidence window 2026-08-03 → 2026-08-06T12:00:00Z"
+  ],
   "flagged": true
 }
